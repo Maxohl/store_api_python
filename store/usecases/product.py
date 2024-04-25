@@ -5,7 +5,7 @@ import pymongo
 from store.db.mongo import db_client
 from store.models.product import ProductModel
 from store.schemas.product import ProductIn, ProductOut, ProductUpdate, ProductUpdateOut
-from store.core.exceptions import NotFoundException
+from store.core.exceptions import InternalServerError, NotFoundException
 
 
 class ProductUsecase:
@@ -26,28 +26,41 @@ class ProductUsecase:
         if not result:
             raise NotFoundException(message=f"Product not found with filter: {id}")
 
-        return ProductOut(**result)
+        try:
+            return ProductOut(**result)
+        except Exception as e:
+            print(f"Error occurred while creating ProductOut: {e}")
+            raise InternalServerError()
 
     async def query(self) -> List[ProductOut]:
         return [ProductOut(**item) async for item in self.collection.find()]
 
     async def update(self, id: UUID, body: ProductUpdate) -> ProductUpdateOut:
-        result = await self.collection.find_one_and_update(
-            filter={"id": id},
-            update={"$set": body.model_dump(exclude_none=True)},
-            return_document=pymongo.ReturnDocument.AFTER,
-        )
-
-        return ProductUpdateOut(**result)
+        try:
+            result = await self.collection.find_one_and_update(
+                filter={"id": id},
+                update={"$set": body.model_dump(exclude_none=True)},
+                return_document=pymongo.ReturnDocument.AFTER,
+            )
+            return ProductUpdateOut(**result)
+        except Exception as e:
+            print(f"Error occurred while updating product: {e}")
+            raise InternalServerError()
 
     async def delete(self, id: UUID) -> bool:
         product = await self.collection.find_one({"id": id})
         if not product:
             raise NotFoundException(message=f"Product not found with filter: {id}")
+        
+        try:
 
-        result = await self.collection.delete_one({"id": id})
+            result = await self.collection.delete_one({"id": id})
 
-        return True if result.deleted_count > 0 else False
+            return True if result.deleted_count > 0 else False
+        
+        except Exception as e:
+            print(f"Error occurred while deleting product: {e}")
+            raise InternalServerError()
 
 
 product_usecase = ProductUsecase()

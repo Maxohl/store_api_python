@@ -8,3 +8,6 @@ class BaseException(Exception):
 
 class NotFoundException(BaseException):
     message = "Not Found"
+
+class InternalServerError(BaseException):
+    message = "Internal Server Error"
