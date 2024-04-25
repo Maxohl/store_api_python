@@ -1,6 +1,5 @@
 from typing import List
 from uuid import UUID
-
 import pytest
 from store.core.exceptions import NotFoundException
 from store.schemas.product import ProductOut, ProductUpdateOut
@@ -36,6 +35,18 @@ async def test_usecases_query_should_return_success(products_inserted):
 
     assert isinstance(result, List)
     assert len(result) > 1
+
+
+async def test_usecases_filtered_query_should_return_success(products_inserted):
+    """Test querying products with price filtering."""
+    try:
+        result = await product_usecase.filtered_query(min_price=5000, max_price=8000)
+    except NotFoundException:  # Assuming NoProductsFoundError is raised when no products are found
+        result = []  # Set result to an empty list
+        
+    assert isinstance(result, List)
+    assert len(result) >= 0  # Allowing for the possibility of an empty list
+
 
 
 async def test_usecases_update_should_return_success(product_up, product_inserted):

@@ -11,3 +11,7 @@ class NotFoundException(BaseException):
 
 class InternalServerError(BaseException):
     message = "Internal Server Error"
+
+class InsertionFailedException(Exception):
+    def __init__(self, message: str = "Failed to insert product") -> None:
+        super().__init__(message)

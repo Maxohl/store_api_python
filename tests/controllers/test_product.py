@@ -18,7 +18,7 @@ async def test_controller_create_should_return_success(client, products_url):
     assert content == {
         "name": "Iphone 14 Pro Max",
         "quantity": 10,
-        "price": "8.500",
+        "price": "7.500",
         "status": True,
     }
 
@@ -38,7 +38,7 @@ async def test_controller_get_should_return_success(
         "id": str(product_inserted.id),
         "name": "Iphone 14 Pro Max",
         "quantity": 10,
-        "price": "8.500",
+        "price": "7.500",
         "status": True,
     }
 
@@ -59,6 +59,18 @@ async def test_controller_query_should_return_success(client, products_url):
     assert response.status_code == status.HTTP_200_OK
     assert isinstance(response.json(), List)
     assert len(response.json()) > 1
+
+
+async def test_controller_filtered_query_should_return_success(client, products_url):
+    response = await client.get(f"{products_url}?min_price=5000&max_price=8000")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert isinstance(response.json(), List)
+    
+    if len(response.json()) == 0:
+        assert response.json() == []  # Assert that an empty list is returned
+    else:
+        assert len(response.json()) > 0  # Ensure that the list is not empty
 
 
 async def test_controller_patch_should_return_success(

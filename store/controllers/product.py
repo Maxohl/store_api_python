@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from pydantic import UUID4
-from store.core.exceptions import NotFoundException
+from store.core.exceptions import NotFoundException, InsertionFailedException
 
 from store.schemas.product import ProductIn, ProductOut, ProductUpdate, ProductUpdateOut
 from store.usecases.product import ProductUsecase
@@ -13,7 +13,10 @@ router = APIRouter(tags=["products"])
 async def post(
     body: ProductIn = Body(...), usecase: ProductUsecase = Depends()
 ) -> ProductOut:
-    return await usecase.create(body=body)
+        try:
+            return await usecase.create(body=body)
+        except InsertionFailedException as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
 @router.get(path="/{id}", status_code=status.HTTP_200_OK)
@@ -30,6 +33,11 @@ async def get(
 async def query(usecase: ProductUsecase = Depends()) -> List[ProductOut]:
     return await usecase.query()
 
+@router.get("/", status_code=status.HTTP_200_OK)
+async def query_filtered(
+    min_price: float = 5000, max_price: float = 8000, usecase: ProductUsecase = Depends()
+) -> List[ProductOut]:
+    return await usecase.filtered_query(min_price=min_price, max_price=max_price)
 
 @router.patch(path="/{id}", status_code=status.HTTP_200_OK)
 async def patch(
@@ -37,7 +45,10 @@ async def patch(
     body: ProductUpdate = Body(...),
     usecase: ProductUsecase = Depends(),
 ) -> ProductUpdateOut:
-    return await usecase.update(id=id, body=body)
+    try:
+        return await usecase.update(id=id, body=body)
+    except NotFoundException as exc: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
 
 @router.delete(path="/{id}", status_code=status.HTTP_204_NO_CONTENT)
